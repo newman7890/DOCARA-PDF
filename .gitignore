@@ -50,6 +50,8 @@ app.*.map.json
 
 # Build folders
 build/
+!Latest_Builds/
+!Latest_Builds/Docara_Latest.apk
 
 # Local/Secrets
 lib/constants/secrets.dart
