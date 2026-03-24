@@ -1,0 +1,9 @@
+project_id = "rhxoxmqthsumhgudkcvk"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "graphql", "realtime"]
+
+[functions.verify-device]
+verify_jwt = false

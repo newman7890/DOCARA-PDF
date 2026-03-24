@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About the Developer | Docara</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <!-- Moving Dot Animation Canvas -->
+    <canvas id="particleCanvas"></canvas>
+
+    <!-- Navigation Header -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="nav-logo">
+                <div class="logo-icon">✨</div>
+                <span>PDF Toolkit</span>
+            </a>
+            <div class="nav-links">
+                <a href="index.html#features">Features</a>
+                <a href="index.html#how-it-works">Process</a>
+                <a href="index.html#faq">FAQ</a>
+                <a href="index.html#pricing">Pricing</a>
+            </div>
+            <button class="mobile-menu-btn" aria-label="Toggle Menu">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+    </nav>
+
+    <div class="container">
+        <section class="about-section animate">
+            <a href="index.html" class="back-link">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="19" y1="12" x2="5" y2="12"></line>
+                    <polyline points="12 19 5 12 12 5"></polyline>
+                </svg>
+                Back to Home
+            </a>
+
+            <div class="story-content">
+                <div class="story-header">
+                    <span class="dev-badge">Emmanuel Arkutu Kwabla</span>
+                    <h1 style="font-size: 2.5rem; margin-bottom: 0.5rem; line-height: 1.2;">A Journey of Persistence,
+                        Innovation, and Software Engineering</h1>
+                    <p
+                        style="color: var(--primary); font-weight: 600; font-size: 1rem; letter-spacing: 2px; text-transform: uppercase; opacity: 0.8;">
+                        Founder & Lead Engineer</p>
+                </div>
+
+                <div class="story-text">
+                    <p>My story is not just about technology or computers. It is a story about curiosity, persistence,
+                        and the belief that ideas can become
+                        reality through knowledge and determination. Today I am known as a software engineer and
+                        developer, but the path that brought me here was built step by step, challenge by challenge, and
+                        line by line of code.</p>
+
+                    <p>From a young age, I was always fascinated by how things worked. When I saw a mobile phone, a
+                        computer, or a website, I did not just see a device I saw a mystery. I wondered how they managed
+                        to make machines perform tasks that seemed almost magical. That curiosity slowly grew into a
+                        deep interest in technology.</p>
+
+                    <p>At first, programming felt complicated and overwhelming strange symbols and constant error
+                        messages. But instead of giving up, I saw these difficulties as puzzles. Each error became a
+                        lesson, and every successful fix became a victory. The moment I wrote my first working program,
+                        I realized software development was about <strong>creating solutions</strong>.</p>
+
+                    <p>This persistence eventually led me to solve a very real, personal frustration: <strong>Document
+                            Privacy</strong>. I saw scanning apps that were bloated with ads or forced documents onto
+                        external clouds. I believed that your sensitive documents should never leave your hand. This
+                        belief became the foundation of <strong>Docara</strong>.</p>
+
+                    <p>I spent countless nights stay awake, refining the AI powered OCR to work 100% offline and
+                        perfecting precision digital signatures. I pushed myself to build a system that wasn't just a
+                        practice exercise, but a professional grade toolkit designed to empower people and protect their
+                        privacy.</p>
+
+                    <p>To me, being a developer means being a <strong>creator</strong> turning complex problems into
+                        elegant solutions. I am still writing my story, shaping my journey step by step, one project,
+                        one idea, and one line of code at a time. Each challenge I face becomes a lesson, each success
+                        is a reminder of how far I’ve come, and each new day is an opportunity to build, create, and
+                        grow into something greater.🚀</p>
+                </div>
+
+                <!-- Philosophy Section -->
+                <div
+                    style="margin-top: 4rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 2rem; border-top: 1px solid var(--glass-border); padding-top: 3rem;">
+                    <div style="text-align: center;">
+                        <div style="font-size: 2rem; margin-bottom: 1rem;">🛡️</div>
+                        <h4 style="margin-bottom: 0.5rem; color: var(--primary);">Privacy First</h4>
+                        <p style="font-size: 0.9rem; color: var(--text-dim);">Your data never leaves your device.
+                            Period.</p>
+                    </div>
+                    <div style="text-align: center;">
+                        <div style="font-size: 2rem; margin-bottom: 1rem;">⚡</div>
+                        <h4 style="margin-bottom: 0.5rem; color: var(--primary);">Pure Speed</h4>
+                        <p style="font-size: 0.9rem; color: var(--text-dim);">Offline-first architecture for instant
+                            results.</p>
+                    </div>
+                    <div style="text-align: center;">
+                        <div style="font-size: 2rem; margin-bottom: 1rem;">💎</div>
+                        <h4 style="margin-bottom: 0.5rem; color: var(--primary);">Craftmanship</h4>
+                        <p style="font-size: 0.9rem; color: var(--text-dim);">Attention to detail in every line of code.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer
+            style="padding: 4rem 0; text-align: center; border-top: 1px solid var(--glass-border); position: relative; z-index: 1;">
+            <p style="color: var(--text-dim)">&copy; 2026 Docara. All rights reserved.</p>
+            <p style="font-size: 0.8rem; margin-top: 1rem; color: var(--primary); font-weight: 600;">Designed &
+                Engineered by Emmanuel Arkutu Kwabla.</p>
+        </footer>
+    </div>
+
+    <!-- Particle Background Script -->
+    <script>
+        const canvas = document.getElementById('particleCanvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+        const particleCount = 1000;
+
+        window.addEventListener('resize', resizeCanvas);
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        resizeCanvas();
+
+        class Particle {
+            constructor() {
+                this.init();
+            }
+            init() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.size = Math.random() * 2 + 1;
+                this.speedX = Math.random() * 0.4 - 0.2;
+                this.speedY = Math.random() * 0.4 - 0.2;
+                this.opacity = Math.random() * 0.4 + 0.1;
+            }
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+
+                if (this.x < 0 || this.x > canvas.width || this.y < 0 || this.y > canvas.height) {
+                    this.init();
+                }
+            }
+            draw() {
+                ctx.fillStyle = `rgba(99, 102, 241, ${this.opacity})`;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        for (let i = 0; i < particleCount; i++) {
+            particles.push(new Particle());
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles.forEach(p => {
+                p.update();
+                p.draw();
+            });
+            requestAnimationFrame(animate);
+        }
+        animate();
+
+        // Reveal animations
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+            });
+        }, { threshold: 0.1 });
+
+        document.querySelectorAll('.animate').forEach(el => observer.observe(el));
+
+        // Navbar Scroll Effect
+        const navbar = document.querySelector('.navbar');
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 50) {
+                navbar.style.padding = '0.5rem 0';
+                navbar.style.background = 'rgba(255, 255, 255, 0.9)';
+                navbar.style.boxShadow = '0 10px 30px rgba(0,0,0,0.1)';
+            } else {
+                navbar.style.padding = '0';
+                navbar.style.background = 'rgba(255, 255, 255, 0.7)';
+                navbar.style.boxShadow = 'none';
+            }
+        });
+
+        // Mobile Menu Toggle
+        const mobileBtn = document.querySelector('.mobile-menu-btn');
+        const navLinks = document.querySelector('.nav-links');
+
+        mobileBtn.addEventListener('click', () => {
+            navLinks.classList.toggle('active');
+        });
+
+        // Close mobile menu on link click
+        document.querySelectorAll('.nav-links a').forEach(link => {
+            link.addEventListener('click', () => {
+                if (window.innerWidth <= 968) {
+                    navLinks.style.display = 'none';
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>

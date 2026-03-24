@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Docara | Professional Document Toolkit</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <!-- Moving Dot Animation Canvas -->
+    <canvas id="particleCanvas"></canvas>
+
+    <!-- Navigation Header -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="#" class="nav-logo">
+                <div class="logo-icon">✨</div>
+                <span>PDF Toolkit</span>
+            </a>
+            <div class="nav-links">
+                <a href="#features">Features</a>
+                <a href="#how-it-works">Process</a>
+                <a href="#faq">FAQ</a>
+                <a href="#pricing">Pricing</a>
+            </div>
+            <button class="mobile-menu-btn" aria-label="Toggle Menu">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- Hero Section -->
+        <header class="animate">
+            <div class="hero-content">
+                <div class="hero-left">
+                    <h1>Scan, Edit & Sign with Ease.</h1>
+                    <p class="hero-subtitle">The most powerful document toolkit for your mobile device. AI powered
+                        auto-cropping and edge detection ensure perfect scans every time.</p>
+                    <div class="cta-group">
+                        <a href="Latest_Builds/Docara_Latest.apk" class="btn btn-primary" download>
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="7 10 12 15 17 10"></polyline>
+                                <line x1="12" y1="15" x2="12" y2="3"></line>
+                            </svg>
+                            Download APK
+                        </a>
+                        <div style="position: relative;">
+                            <a href="#" class="btn" style="border: 1px solid var(--glass-border); color: var(--text-dim); cursor: not-allowed; opacity: 0.6;">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M12 19c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8z"></path>
+                                    <path d="M12 15c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4z"></path>
+                                </svg>
+                                App Store
+                            </a>
+                            <span style="position: absolute; top: -10px; right: -5px; background: var(--primary); color: white; font-size: 8px; padding: 2px 6px; border-radius: 10px; font-weight: 800; letter-spacing: 0.5px;">COMING SOON</span>
+                        </div>
+                        <a href="about.html" class="btn"
+                            style="border: 1px solid var(--glass-border); color: var(--text-main);">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="12" cy="7" r="4"></circle>
+                            </svg>
+                            Meet the Developer
+                        </a>
+                    </div>
+                </div>
+                <div class="hero-right">
+                    <!-- App Mockup Removed Based on User Request -->
+                </div>
+            </div>
+        </header>
+
+        <!-- Features Section -->
+        <section id="features" class="features">
+            <h2 class="section-title">Professional Toolkit Features</h2>
+            <div class="feature-grid">
+                <div class="feature-card animate">
+                    <div class="feature-icon">🔍</div>
+                    <h3>Smart Document Scanner</h3>
+                    <p>High-precision scanning with automatic edge detection and perspective correction for pin-sharp results.</p>
+                </div>
+                <div class="feature-card animate">
+                    <div class="feature-icon">✍️</div>
+                    <h3>Digital Signatures</h3>
+                    <p>Create and save your professional signature. Place, resize, and position it anywhere on any document.</p>
+                </div>
+                <div class="feature-card animate">
+                    <div class="feature-icon">📝</div>
+                    <h3>Advanced Document Editor</h3>
+                    <p>Modify existing PDFs or create new ones. Add text, change formatting, and reorganize pages effortlessly.</p>
+                </div>
+                <div class="feature-card animate">
+                    <div class="feature-icon">🤖</div>
+                    <h3>Offline AI OCR</h3>
+                    <p>Convert images to editable text using on-device machine learning. Fast, accurate, and 100% private.</p>
+                </div>
+                <div class="feature-card animate">
+                    <div class="feature-icon">🌍</div>
+                    <h3>AI Translation</h3>
+                    <p>Instantly translate scanned text into 10+ languages (Spanish, French, Chinese, etc.) 100% offline.</p>
+                </div>
+                <div class="feature-card animate">
+                    <div class="feature-icon">🪪</div>
+                    <h3>ID & Passport Modes</h3>
+                    <p>Specialized scanning modes for identity cards and passports with automated cropping and alignment.</p>
+                </div>
+                <div class="feature-card animate">
+                    <div class="feature-icon">✨</div>
+                    <h3>AI Image Refinement</h3>
+                    <p>Automatic sharpening, shadow removal, and contrast balancing for professional-grade document quality.</p>
+                </div>
+                <div class="feature-card animate">
+                    <div class="feature-icon">🔊</div>
+                    <h3>AI Read Aloud (TTS)</h3>
+                    <p>Listen to your documents. Our built-in engine reads PDFs clearly with adjustable speed, even offline.</p>
+                </div>
+                <div class="feature-card animate">
+                    <div class="feature-icon">🧹</div>
+                    <h3>Professional Eraser</h3>
+                    <p>Easily "white-out" sensitive text or stains using the professional drawing tools and white-eraser mode.</p>
+                </div>
+                <div class="feature-card animate">
+                    <div class="feature-icon">📊</div>
+                    <h3>Smart Spreadsheets</h3>
+                    <p>Create powerful data grids with formulas (SUM, AVG, MIN, MAX), multi-currency support, and multiple sheets — all offline.</p>
+                </div>
+                <div class="feature-card animate">
+                    <div class="feature-icon">📈</div>
+                    <h3>Charts & Visualizations</h3>
+                    <p>Generate Bar and Pie charts from your spreadsheet data instantly. Export any sheet as a professional PDF report.</p>
+                </div>
+                <div class="feature-card animate">
+                    <div class="feature-icon">🛡️</div>
+                    <h3>Permanent Local Storage</h3>
+                    <p>All your data is stored securely on your device. No cloud uploads, no tracking, total control of your files.</p>
+                </div>
+                <div class="feature-card animate">
+                    <div class="feature-icon">🔒</div>
+                    <h3>Zero-Knowledge Privacy</h3>
+                    <p>No accounts, no cloud, no tracking. Your documents are encrypted and stored only on your physical device.</p>
+                </div>
+            </div>
+        </section>
+
+             <section id="how-it-works" class="how-it-works animate" style="padding: 100px 0;">
+            <h2 class="section-title">How It Works</h2>
+            <div class="steps-container">
+                <div class="step-item">
+                    <span class="step-number">Step 01</span>
+                    <h3>Capture or Import</h3>
+                    <p>Use the smart scanner for physical documents or import existing files from your gallery or storage.</p>
+                </div>
+                <div class="step-item">
+                    <span class="step-number">Step 02</span>
+                    <h3>Process & Refine</h3>
+                    <p>Apply AI-driven enhancements and run OCR to extract text. Everything happens offline on your hardware.</p>
+                </div>
+                <div class="step-item">
+                    <span class="step-number">Step 03</span>
+                    <h3>Edit & Sign</h3>
+                    <p>Add text, erase unwanted parts, and place your digital signature exactly where it's needed.</p>
+                </div>
+                <div class="step-item">
+                    <span class="step-number">Step 04</span>
+                    <h3>Save, Export & Share</h3>
+                    <p>Export your finished document or spreadsheet as a high-quality PDF. Share it privately over any app, or save it locally for safe storage.</p>
+                </div>
+        </section>
+
+        <!-- Privacy Promise -->
+        <section class="animate">
+            <div class="privacy-promise">
+                <span class="privacy-badge">OFFLINE FIRST ARCHITECTURE</span>
+                <h2>Our Privacy Promise</h2>
+                <p style="max-width: 600px; margin: 1.5rem auto; color: var(--text-dim);">We built this app on the
+                    principle that your documents are yours alone. No cloud processing, no data harvesting, and zero
+                    tracking. Everything happens locally on your device hardware.</p>
+                <div style="display: flex; justify-content: center; gap: 2rem; margin-top: 2rem;">
+                    <div><strong class="text-accent">100%</strong><br><small>Offline</small></div>
+                    <div><strong class="text-accent">0</strong><br><small>Cloud Uploads</small></div>
+                    <div><strong class="text-accent">Locked</strong><br><small>On-Device</small></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- FAQ Section -->
+        <section id="faq" style="padding: 100px 0;">
+            <h2 class="section-title">Common Questions</h2>
+            <div class="faq-grid animate">
+                <div class="faq-card">
+                    <h4>Do I need a Google account?</h4>
+                    <p>No. You can start scanning immediately. We do not require any accounts or personal information.</p>
+                </div>
+                <div class="faq-card">
+                    <h4>Does it save to Google Drive?</h4>
+                    <p>No. The app is disconnected from all cloud services to ensure your documents stay 100% private on your device.</p>
+                </div>
+                <div class="faq-card">
+                    <h4>How much does it cost?</h4>
+                    <p>New users get 3 free trials. After that, the Pro plan is a flat 70 GHS for unlimited lifetime access or per month depending on your region.</p>
+                </div>
+                <div class="faq-card">
+                    <h4>Can I edit existing PDFs?</h4>
+                    <p>Yes, you can import any PDF and use our editor. Each import uses one free trial for non-pro users.</p>
+                </div>
+                <div class="faq-card">
+                    <h4>Can I scan ID cards and passports?</h4>
+                    <p>Yes! Use the dedicated ID Card mode to scan front and back separately — the app combines them into one PDF automatically.</p>
+                </div>
+                <div class="faq-card">
+                    <h4>What are Smart Spreadsheets?</h4>
+                    <p>A built-in data grid tool with Excel-style formulas, multi-currency formatting, chart generation, and local PDF export — all from your phone.</p>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- Pricing Section -->
+        <section id="pricing" class="pricing">
+            <h2 class="section-title">Simple, Honest Pricing</h2>
+            <div style="display: flex; justify-content: center; gap: 2rem; flex-wrap: wrap; margin-bottom: 3rem;">
+                <!-- Trial Card -->
+                <div class="pricing-card animate" style="flex: 1; min-width: 260px; max-width: 320px;">
+                    <p style="font-weight: 600;">Free Trial</p>
+                    <div class="price">0.00 GHS<span>/3 uses</span></div>
+                    <ul class="pricing-list">
+                        <li>3 free document scans or imports</li>
+                        <li>Full AI Text Extraction (OCR)</li>
+                        <li>Digital signatures</li>
+                        <li>No credit card required</li>
+                    </ul>
+                </div>
+                <!-- Pro Card -->
+                <div class="pricing-card animate has-ribbon" style="flex: 1; min-width: 260px; max-width: 320px;">
+                    <p style="font-weight: 600;">Premium Pro ⭐</p>
+                    <div class="price">70.00 GHS<span>/month</span></div>
+                    <ul class="pricing-list">
+                        <li>Unlimited document scans and imports</li>
+                        <li>Full AI Text Extraction (OCR)</li>
+                        <li>Advanced editor & fillable fields</li>
+                        <li>Smart Spreadsheets with formulas & charts</li>
+                        <li>**Permanent Offline Storage**</li>
+                        <li>ID Card & Passport scanning modes</li>
+                        <li>No watermark or trial limits</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer
+            style="padding: 4rem 0; text-align: center; border-top: 1px solid var(--glass-border); position: relative; z-index: 1;">
+            <p style="color: var(--text-dim)">&copy; 2026 Docara. All rights reserved.</p>
+            <p style="margin-top: 1rem;"><a href="about.html"
+                    style="color: var(--primary); text-decoration: none; font-weight: 600;">About the Developer</a></p>
+            <p style="font-size: 0.8rem; margin-top: 1rem; color: var(--text-dim);">Made for efficiency & privacy.</p>
+        </footer>
+    </div>
+
+    <!-- Particle Background Script -->
+    <script>
+        const canvas = document.getElementById('particleCanvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+        const particleCount = 1000;
+
+        window.addEventListener('resize', resizeCanvas);
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        resizeCanvas();
+
+        class Particle {
+            constructor() {
+                this.init();
+            }
+            init() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.size = Math.random() * 2 + 1;
+                this.speedX = Math.random() * 0.5 - 0.25;
+                this.speedY = Math.random() * 0.5 - 0.25;
+                this.opacity = Math.random() * 0.5 + 0.1;
+            }
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+
+                if (this.x < 0 || this.x > canvas.width || this.y < 0 || this.y > canvas.height) {
+                    this.init();
+                }
+            }
+            draw() {
+                ctx.fillStyle = `rgba(99, 102, 241, ${this.opacity})`;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        for (let i = 0; i < particleCount; i++) {
+            particles.push(new Particle());
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles.forEach(p => {
+                p.update();
+                p.draw();
+            });
+            requestAnimationFrame(animate);
+        }
+        animate();
+
+        // Reveal animations
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+            });
+        }, { threshold: 0.1 });
+
+        document.querySelectorAll('.animate').forEach(el => observer.observe(el));
+
+        // Navbar Scroll Effect
+        const navbar = document.querySelector('.navbar');
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 50) {
+                navbar.style.padding = '0.5rem 0';
+                navbar.style.boxShadow = '0 10px 30px rgba(0,0,0,0.1)';
+            } else {
+                navbar.style.padding = '0';
+                navbar.style.boxShadow = 'none';
+            }
+        });
+
+        // Mobile Menu Toggle
+        const mobileBtn = document.querySelector('.mobile-menu-btn');
+        const navLinks = document.querySelector('.nav-links');
+
+        mobileBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            navLinks.classList.toggle('active');
+        });
+
+        // Close mobile menu on link click
+        document.querySelectorAll('.nav-links a').forEach(link => {
+            link.addEventListener('click', () => {
+                if (window.innerWidth <= 968) {
+                    navLinks.classList.remove('active');
+                }
+            });
+        });
+
+        // Close mobile menu when clicking outside
+        document.addEventListener('click', (e) => {
+            if (window.innerWidth <= 968 && navLinks.classList.contains('active')) {
+                if (!navLinks.contains(e.target) && !mobileBtn.contains(e.target)) {
+                    navLinks.classList.remove('active');
+                }
+            }
+        });
+    </script>
+</body>
+
+</html>
