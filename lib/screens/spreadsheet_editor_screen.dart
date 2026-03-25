@@ -18,23 +18,22 @@ import 'viewer_screen.dart';
 
 class SpreadsheetEditorScreen extends StatefulWidget {
   final Spreadsheet? sheet;
+
   const SpreadsheetEditorScreen({super.key, this.sheet});
 
   @override
-  State<SpreadsheetEditorScreen> createState() =>
-      _SpreadsheetEditorScreenState();
+  State<SpreadsheetEditorScreen> createState() => _SpreadsheetEditorScreenState();
 }
 
 class _SpreadsheetEditorScreenState extends State<SpreadsheetEditorScreen>
     with SingleTickerProviderStateMixin {
   late Spreadsheet _currentSheet;
-  List<PlutoColumn> columns = [];
-  List<PlutoRow> rows = [];
   PlutoGridStateManager? stateManager;
-  late TabController _ribbonTabController;
+  Timer? _saveTimer;
   double _zoomLevel = 1.0;
   bool _isExiting = false;
-  Timer? _saveTimer;
+
+  late TabController _ribbonTabController;
 
   @override
   void initState() {
@@ -62,7 +61,7 @@ class _SpreadsheetEditorScreenState extends State<SpreadsheetEditorScreen>
   void _initializeGrid() {
     final activeSheet = _currentSheet.activeSheet;
 
-    columns = activeSheet.columns.map((col) {
+    final List<PlutoColumn> columns = activeSheet.columns.map((col) {
       return PlutoColumn(
         title: col.title,
         field: col.id,
@@ -81,7 +80,7 @@ class _SpreadsheetEditorScreenState extends State<SpreadsheetEditorScreen>
       );
     }).toList();
 
-    rows = activeSheet.rows.map((rowMap) {
+    final List<PlutoRow> rows = activeSheet.rows.map((rowMap) {
       final cells = <String, PlutoCell>{};
       for (var col in activeSheet.columns) {
         cells[col.id] = PlutoCell(value: rowMap[col.id]?.value ?? '');
@@ -139,6 +138,7 @@ class _SpreadsheetEditorScreenState extends State<SpreadsheetEditorScreen>
       ),
     );
   }
+
 
   void _saveCurrentSheetToModel() {
     if (stateManager == null) return;
@@ -611,6 +611,55 @@ class _SpreadsheetEditorScreenState extends State<SpreadsheetEditorScreen>
     });
   }
 
+  void _removeSheet(int index) async {
+    if (_currentSheet.sheets.length <= 1) {
+      _showSuccessMessage('Cannot delete the only remaining sheet');
+      return;
+    }
+
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete Sheet'),
+        content: Text('Are you sure you want to delete "${_currentSheet.sheets[index].name}"? This cannot be undone.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      _commitCurrentEdit();
+      setState(() {
+        final updatedSheets = List<SpreadsheetSheet>.from(_currentSheet.sheets);
+        updatedSheets.removeAt(index);
+
+        int newActiveIndex = _currentSheet.activeSheetIndex;
+        if (index == _currentSheet.activeSheetIndex) {
+          newActiveIndex = 0; // Fallback to first sheet
+        } else if (index < _currentSheet.activeSheetIndex) {
+          newActiveIndex--; // Shift active index back
+        }
+
+        _currentSheet = _currentSheet.copyWith(
+          sheets: updatedSheets,
+          activeSheetIndex: newActiveIndex,
+        );
+        _initializeGrid();
+      });
+      _scheduleSave();
+      _showSuccessMessage('Sheet Deleted');
+    }
+  }
+
   void _removeColumn() {
     if (stateManager == null) return;
 
@@ -821,6 +870,14 @@ class _SpreadsheetEditorScreenState extends State<SpreadsheetEditorScreen>
                         _removeColumn,
                       ),
                     ]),
+                    const VerticalDivider(),
+                    _buildRibbonGroup('Format', [
+                      _buildRibbonAction(
+                        Icons.text_format,
+                        'Format',
+                        () => _showSuccessMessage('Formatting options coming soon'),
+                      ),
+                    ]),
                   ],
                   if (_ribbonTabController.index == 2) // Insert
                     _buildRibbonGroup('Data Export', [
@@ -876,17 +933,31 @@ class _SpreadsheetEditorScreenState extends State<SpreadsheetEditorScreen>
               child: Stack(
                 children: [
                   PlutoGrid(
-                    columns: columns,
-                    rows: rows,
+                    columns: _currentSheet.activeSheet.columns.map((col) {
+                      return PlutoColumn(
+                        title: col.title,
+                        field: col.id,
+                        type: col.type == SpreadsheetColumnType.number || col.type == SpreadsheetColumnType.currency
+                            ? PlutoColumnType.number(format: '#,###.##')
+                            : col.type == SpreadsheetColumnType.date
+                                ? PlutoColumnType.date()
+                                : PlutoColumnType.text(),
+                        backgroundColor: Colors.grey.shade100,
+                      );
+                    }).toList(),
+                    rows: _currentSheet.activeSheet.rows.map((rowMap) {
+                      final cells = <String, PlutoCell>{};
+                      for (var col in _currentSheet.activeSheet.columns) {
+                        cells[col.id] = PlutoCell(value: rowMap[col.id]?.value ?? '');
+                      }
+                      return PlutoRow(cells: cells);
+                    }).toList(),
                     onChanged: (PlutoGridOnChangedEvent event) {
                       _onCellChanged(event);
                     },
                     onLoaded: (PlutoGridOnLoadedEvent event) {
                       stateManager = event.stateManager;
                       stateManager!.setShowColumnFilter(true);
-                    },
-                    onSelected: (PlutoGridOnSelectedEvent event) {
-                      // Listener handles this more reliably
                     },
                     configuration: PlutoGridConfiguration(
                       style: PlutoGridStyleConfig(
@@ -947,6 +1018,15 @@ class _SpreadsheetEditorScreenState extends State<SpreadsheetEditorScreen>
                               return ListTile(
                                 title: Text(entry.value.name),
                                 leading: const Icon(Icons.table_chart),
+                                trailing: _currentSheet.sheets.length > 1
+                                    ? IconButton(
+                                        icon: const Icon(Icons.delete_outline, color: Colors.red),
+                                        onPressed: () {
+                                          Navigator.pop(ctx);
+                                          _removeSheet(entry.key);
+                                        },
+                                      )
+                                    : null,
                                 selected:
                                     entry.key == _currentSheet.activeSheetIndex,
                                 onTap: () {
@@ -989,6 +1069,7 @@ class _SpreadsheetEditorScreenState extends State<SpreadsheetEditorScreen>
                               _currentSheet.sheets[index].name,
                               index == _currentSheet.activeSheetIndex,
                               () => _switchSheet(index),
+                              () => _removeSheet(index),
                             );
                           }),
                           IconButton(
@@ -1130,14 +1211,20 @@ class _SpreadsheetEditorScreenState extends State<SpreadsheetEditorScreen>
     );
   }
 
-  Widget _buildSheetTab(String label, bool active, VoidCallback onTap) {
+  Widget _buildSheetTab(
+    String name,
+    bool isActive,
+    VoidCallback onTap,
+    VoidCallback onLongPress,
+  ) {
     return InkWell(
       onTap: onTap,
+      onLongPress: onLongPress,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16),
         decoration: BoxDecoration(
-          color: active ? Colors.white : Colors.transparent,
-          border: active
+          color: isActive ? Colors.white : Colors.transparent,
+          border: isActive
               ? const Border(
                   bottom: BorderSide(color: Color(0xFF217346), width: 2),
                 )
@@ -1145,11 +1232,11 @@ class _SpreadsheetEditorScreenState extends State<SpreadsheetEditorScreen>
         ),
         alignment: Alignment.center,
         child: Text(
-          label,
+          name,
           style: TextStyle(
             fontSize: 12,
-            color: active ? const Color(0xFF217346) : Colors.black87,
-            fontWeight: active ? FontWeight.bold : FontWeight.normal,
+            color: isActive ? const Color(0xFF217346) : Colors.black87,
+            fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
           ),
         ),
       ),

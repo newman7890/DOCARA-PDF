@@ -6,10 +6,7 @@ import 'services/ocr_service.dart';
 import 'services/permission_service.dart';
 import 'services/image_processing_service.dart';
 import 'services/pdf_editor_service.dart';
-import 'services/identity_service.dart';
-import 'services/api_service.dart';
 import 'services/security_service.dart';
-import 'services/payment_service.dart';
 import 'services/tts_service.dart';
 import 'services/translation_service.dart';
 import 'services/spreadsheet_service.dart';
@@ -50,10 +47,7 @@ void main() async {
         Provider<ImageProcessingService>(
           create: (_) => ImageProcessingService(),
         ),
-        Provider<IdentityService>(create: (_) => IdentityService()),
-        Provider<ApiService>(create: (_) => ApiService()),
         Provider<SecurityService>(create: (_) => SecurityService()),
-        Provider<PaymentService>(create: (_) => PaymentService()),
         Provider<SpreadsheetService>(create: (_) => SpreadsheetService()),
         ChangeNotifierProvider<TTSService>(
           create: (_) => TTSService(),
@@ -136,6 +130,7 @@ class PDFScannerApp extends StatelessWidget {
         GlobalCupertinoLocalizations.delegate,
       ],
       supportedLocales: const [Locale('en', 'US')],
+      // Redirect based on Onboarding status (Auth constraint disabled per user request)
       home: showOnboarding ? const OnboardingScreen() : const HomeScreen(),
     );
   }

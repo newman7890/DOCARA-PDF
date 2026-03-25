@@ -117,7 +117,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
     ),
     OnboardingPage(
       title: 'Premium Support',
-      subtitle: 'Unlock everything for 70 GHS',
+      subtitle: 'Unlock everything for 0.50 GHS',
       tips: [
         'Unlimited scans and Smart Spreadsheets',
         'Permanent Offline Access - no internet needed',

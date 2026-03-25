@@ -42,20 +42,21 @@ class SpreadsheetColumn {
 }
 
 class SpreadsheetCell {
-  final String value;
-  final String? formula;
+  final dynamic value;
 
-  SpreadsheetCell({required this.value, this.formula});
+  SpreadsheetCell({this.value});
 
-  Map<String, dynamic> toMap() => {
-        'value': value,
-        'formula': formula,
-      };
+  Map<String, dynamic> toMap() {
+    return {
+      'value': value,
+    };
+  }
 
-  factory SpreadsheetCell.fromMap(Map<String, dynamic> map) => SpreadsheetCell(
-        value: map['value'] ?? '',
-        formula: map['formula'],
-      );
+  factory SpreadsheetCell.fromMap(Map<String, dynamic> map) {
+    return SpreadsheetCell(
+      value: map['value'],
+    );
+  }
 }
 
 class SpreadsheetSheet {

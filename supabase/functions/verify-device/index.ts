@@ -100,42 +100,66 @@ serve(async (req: any) => {
     }
 
     if (action === 'get_status') {
-      // Look up by deviceID or Hardware Fingerprint to prevent resets
-      const { data, error } = await supabaseClient
+      // 1. Look up Trial usages by Device ID perfectly independently of Auth
+      const { data: dData, error } = await supabaseClient
         .from('devices')
-        .select('usage_count, is_premium, is_blocked, premium_expiry')
-        .or(`device_id.eq.${body.device_id},hardware_fingerprint.eq.${body.hardware_fingerprint}`)
+        .select('usage_count, is_blocked')
+        .eq('device_id', body.device_id)
         .order('usage_count', { ascending: false })
         .limit(1)
         .maybeSingle()
       
       if (error) console.error("[VerifyDevice] Database Error (status):", error);
 
-      if (data) {
-        // Check if premium has expired
-        const now = new Date();
-        const expiry = data.premium_expiry ? new Date(data.premium_expiry) : null;
-        const isExpired = expiry ? now > expiry : false;
+      // 2. Check Premium Status from Supabase Auth token
+      const authHeader = req.headers.get('Authorization');
+      let pData = null;
 
-        if (data.is_premium && isExpired) {
-          // Revoke premium since subscription has lapsed
-          await supabaseClient
-            .from('devices')
-            .update({ is_premium: false })
-            .eq('device_id', body.device_id);
-          data.is_premium = false;
-          console.log(`[VerifyDevice] Premium expired for device ${deviceId}. Revoked.`);
+      if (authHeader) {
+        const token = authHeader.replace('Bearer ', '');
+        const { data: { user } } = await supabaseClient.auth.getUser(token);
+        
+        if (user) {
+          const { data: profile } = await supabaseClient
+            .from('profiles')
+            .select('is_premium, premium_expiry')
+            .eq('id', user.id)
+            .maybeSingle();
+            
+          pData = profile;
+
+          if (pData) {
+            // Check if premium has expired
+            const now = new Date();
+            let isExpired = false;
+            if (pData.premium_expiry) {
+              const expiry = new Date(pData.premium_expiry);
+              if (!isNaN(expiry.getTime())) {
+                isExpired = now > expiry;
+              } else {
+                console.warn(`[VerifyDevice] Invalid premium_expiry format in DB: ${pData.premium_expiry}`);
+              }
+            }
+
+            if (pData.is_premium && isExpired) {
+              // Revoke premium
+              await supabaseClient
+                .from('profiles')
+                .update({ is_premium: false })
+                .eq('id', user.id);
+              pData.is_premium = false;
+              console.log(`[VerifyDevice] Premium expired for user ${user.id}. Revoked.`);
+            }
+          }
         }
-
-        return new Response(JSON.stringify({
-          usage_count: data.usage_count,
-          is_premium: data.is_premium,
-          is_blocked: data.is_blocked,
-          premium_expiry: data.premium_expiry,
-        }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
       }
 
-      return new Response(JSON.stringify({ usage_count: 0, is_premium: false }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+      return new Response(JSON.stringify({
+        usage_count: dData?.usage_count || 0,
+        is_premium: pData?.is_premium || false,
+        is_blocked: dData?.is_blocked || false,
+        premium_expiry: pData?.premium_expiry || null,
+      }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
     }
 
     if (action === 'track_usage') {
@@ -167,59 +191,7 @@ serve(async (req: any) => {
       return new Response(JSON.stringify({ success: true }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
     }
 
-    if (action === 'upgrade') {
-      const expiryDate = new Date();
-      expiryDate.setDate(expiryDate.getDate() + 30); // 30-day subscription
-      const updatePayload: any = { is_premium: true };
-
-      // Optional: Attempt to add premium_expiry if the column exists
-      // We'll try to find if the column exists by just including it and catching errors
-      updatePayload.premium_expiry = expiryDate.toISOString();
-
-      console.log(`[VerifyDevice] Attempting upgrade for Device: ${deviceId}, Fingerprint: ${body.hardware_fingerprint}`);
-
-      // 1. Try updating by device_id OR hardware_fingerprint redundantly to ensure we hit it
-      let { data, error: updateError, count } = await supabaseClient
-        .from('devices')
-        .update(updatePayload, { count: 'exact' })
-        .or(`device_id.eq.${body.device_id},hardware_fingerprint.eq.${body.hardware_fingerprint}`);
-
-      // 2. Fallback: If premium_expiry caused an error (column missing), retry with just is_premium
-      if (updateError && updateError.message.includes('premium_expiry')) {
-        console.warn("[VerifyDevice] premium_expiry column missing, falling back to is_premium only");
-        delete updatePayload.premium_expiry;
-        const result = await supabaseClient
-          .from('devices')
-          .update(updatePayload, { count: 'exact' })
-          .or(`device_id.eq.${body.device_id},hardware_fingerprint.eq.${body.hardware_fingerprint}`);
-        updateError = result.error;
-        count = result.count;
-      }
-
-      // 3. Fallback: IF NO ROWS UPDATED, the device might not be in the table yet!
-      if (!updateError && (count === 0 || count === null)) {
-        console.warn("[VerifyDevice] No records found to update, performing UPSERT instead");
-        const { error: upsertError } = await supabaseClient
-          .from('devices')
-          .upsert({
-            device_id: body.device_id,
-            hardware_fingerprint: body.hardware_fingerprint,
-            ...updatePayload
-          }, { onConflict: 'device_id' });
-        updateError = upsertError;
-      }
-
-      if (updateError) {
-        console.error("[VerifyDevice] Upgrade failed:", updateError);
-        return new Response(JSON.stringify({ success: false, error: updateError.message }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-      }
-
-      console.log(`[VerifyDevice] Premium Activation SUCCESS for ${deviceId}`);
-      return new Response(JSON.stringify({ 
-        success: true, 
-        premium_expiry: updatePayload.premium_expiry || null 
-      }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-    }
+    // HTTP Upgrade action removed entirely for security. Bypasses are now impossible.
 
     return new Response(JSON.stringify({ error: "Invalid Action" }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
 

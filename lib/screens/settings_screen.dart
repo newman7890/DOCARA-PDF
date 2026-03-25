@@ -4,9 +4,6 @@ import 'package:share_plus/share_plus.dart';
 import '../services/storage_service.dart';
 import 'privacy_policy_screen.dart';
 import 'onboarding_screen.dart';
-import 'paywall_screen.dart';
-import '../services/api_service.dart';
-import '../services/identity_service.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -276,147 +273,59 @@ class SettingsScreen extends StatelessWidget {
   }
 
   Widget _buildSubscriptionSection(BuildContext context) {
-    final theme = Theme.of(context);
-    final api = context.read<ApiService>();
-    final identity = context.read<IdentityService>();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSectionHeader(context, 'Subscription'),
-        FutureBuilder<List<dynamic>>(
-          future: Future.wait([
-            identity.getDeviceId(),
-            identity.getHardwareFingerprint(),
-          ]),
-          builder: (context, idSnapshot) {
-            if (!idSnapshot.hasData) {
-              return const Center(
-                child: Padding(
-                  padding: EdgeInsets.all(16),
-                  child: CircularProgressIndicator(),
+        _buildSectionHeader(context, 'Plan'),
+        Card(
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(
+              color: Colors.green.withAlpha(80),
+              width: 1.5,
+            ),
+          ),
+          child: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Colors.green.withAlpha(20),
+                  Colors.green.withAlpha(5),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Column(
+              children: [
+                ListTile(
+                  leading: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: const BoxDecoration(
+                      color: Colors.green,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.check_circle, color: Colors.white),
+                  ),
+                  title: const Text(
+                    'Free Plan',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  subtitle: const Text('Unlimited Access — No subscription needed'),
                 ),
-              );
-            }
-
-            final String deviceId = idSnapshot.data![0];
-            final String fingerprint = idSnapshot.data![1];
-
-            return FutureBuilder<List<dynamic>>(
-              future: Future.wait([
-                api.isPremium(deviceId, fingerprint),
-                api.getGlobalTrialUsage(deviceId, fingerprint),
-              ]),
-              builder: (context, statusSnapshot) {
-                final results = statusSnapshot.data ?? [false, 0];
-                final bool isPremium = results[0] as bool;
-                final int count = results[1] as int;
-                final int remaining = 3 - count > 0 ? 3 - count : 0;
-                final bool isLocked = count >= 3 && !isPremium;
-
-                return Card(
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    side: BorderSide(
-                      color: isPremium
-                          ? Colors.amber.withAlpha(100)
-                          : (isLocked
-                              ? Colors.red.withAlpha(50)
-                              : theme.colorScheme.primary.withAlpha(50)),
-                      width: 1.5,
-                    ),
+                const Padding(
+                  padding: EdgeInsets.fromLTRB(16, 0, 16, 12),
+                  child: Text(
+                    'All features are completely free. Scan, import, and edit unlimited documents.',
+                    style: TextStyle(fontSize: 12, color: Colors.black87),
                   ),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          (isPremium
-                                  ? Colors.amber
-                                  : (isLocked
-                                      ? Colors.red
-                                      : theme.colorScheme.primary))
-                              .withAlpha(20),
-                          (isPremium
-                                  ? Colors.amber
-                                  : (isLocked
-                                      ? Colors.red
-                                      : theme.colorScheme.primary))
-                              .withAlpha(5),
-                        ],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Column(
-                      children: [
-                        ListTile(
-                          leading: Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: isPremium
-                                  ? Colors.amber
-                                  : (isLocked
-                                      ? Colors.red
-                                      : Colors.indigo.withAlpha(50)),
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(
-                              isPremium
-                                  ? Icons.verified
-                                  : (isLocked ? Icons.lock : Icons.star),
-                              color: Colors.white,
-                            ),
-                          ),
-                          title: Text(
-                            isPremium
-                                ? 'Premium Plan'
-                                : (isLocked
-                                    ? 'Account Locked'
-                                    : 'Account Status'),
-                            style: const TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                          subtitle: Text(isPremium
-                              ? 'Unlimited Access'
-                              : (isLocked
-                                  ? 'Trial Expired'
-                                  : 'Free Trial ($remaining uses left)')),
-                          trailing: isPremium
-                              ? null
-                              : TextButton(
-                                  onPressed: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                          builder: (context) =>
-                                              const PaywallScreen()),
-                                    );
-                                  },
-                                  child: Text(isLocked ? 'UNLOCK' : 'UPGRADE'),
-                                ),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 8),
-                          child: Text(
-                            isPremium
-                                ? 'Thank you for supporting us! You have unlimited access to all features.'
-                                : (isLocked
-                                    ? 'Your free trial has ended. Please subscribe to unlock all features.'
-                                    : 'Unlock unlimited PDF scans, high-resolution text extraction, and advanced editing tools.'),
-                            style: const TextStyle(
-                                fontSize: 12, color: Colors.black87),
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            );
-          },
+                ),
+              ],
+            ),
+          ),
         ),
       ],
     );

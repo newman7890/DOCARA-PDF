@@ -85,7 +85,7 @@ serve(async (req: any) => {
     // --- PAYSTACK LOGIC --- //
 
     if (action === 'initialize') {
-      const { email, amount } = body;
+      const { email, amount, user_id } = body;
       const amountInSubunits = Math.round(amount * 100);
       const reference = `pdf_scanner_${globalThis.crypto.randomUUID()}`;
 
@@ -100,6 +100,9 @@ serve(async (req: any) => {
           amount: amountInSubunits,
           reference: reference,
           callback_url: "https://standard.paystack.co/close",
+          metadata: {
+            user_id: user_id
+          }
         }),
       });
 
@@ -133,6 +136,32 @@ serve(async (req: any) => {
       }
 
       const isSuccess = data.data.status === "success";
+      
+      // SERVER-SIDE DATABASE UPGRADE (Security Fix)
+      if (isSuccess && data.data.metadata && data.data.metadata.user_id) {
+        const targetUserId = data.data.metadata.user_id;
+        console.log(`[Paystack] Webhook Verified Success for User: ${targetUserId}. Securing Premium...`);
+        
+        const expiryDate = new Date();
+        expiryDate.setDate(expiryDate.getDate() + 30); // 30-day subscription
+        
+        const supabaseClient = createClient(
+          Deno.env.get('SUPABASE_URL') ?? '',
+          Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+        );
+        
+        const { error: updateError } = await supabaseClient
+          .from('profiles')
+          .update({ is_premium: true, premium_expiry: expiryDate.toISOString() })
+          .eq('id', targetUserId);
+          
+        if (updateError) {
+          console.error(`[Paystack] Critical DB Sync Error for user ${targetUserId}:`, updateError);
+        } else {
+          console.log(`[Paystack] User ${targetUserId} successfully granted premium access.`);
+        }
+      }
+
       return new Response(JSON.stringify({ success: isSuccess, status: data.data.status }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
     }
 

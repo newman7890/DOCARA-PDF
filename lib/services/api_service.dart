@@ -130,60 +130,9 @@ class ApiService {
 
   /// Checks if the device is a premium user (Offline-First + Self-Locking).
   Future<bool> isPremium(String deviceId, String hardwareFingerprint) async {
-    final prefs = await SharedPreferences.getInstance();
-    
-    // 1. Check local cache
-    bool cachedStatus = prefs.getBool(_premiumStatusKey) ?? false;
-    final int? expiryMs = prefs.getInt(_premiumExpiryKey);
-
-    // 2. SELF-LOCKING: Check if time has run out (Even if offline)
-    if (cachedStatus && expiryMs != null) {
-      final now = DateTime.now().millisecondsSinceEpoch;
-      if (now > expiryMs) {
-        debugPrint("🚨 PREMIUM EXPIRED (Offline Guard). Locking access.");
-        await prefs.setBool(_premiumStatusKey, false);
-        cachedStatus = false;
-        // Optionally keep expiryMs as history or clear it
-      }
-    }
-    
-    // 3. Try to verify/sync with server if possible
-    try {
-      final response = await postSigned("/verify-device", {
-        'action': 'get_status',
-        'device_id': deviceId,
-        'hardware_fingerprint': hardwareFingerprint,
-      });
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        
-        // Sync Expiry Date if provided by server
-        if (data.containsKey('premium_until')) {
-          final untilStr = data['premium_until']; // Expecting ISO8601 or timestamp
-          int? serverExpiry;
-          if (untilStr is int) {
-            serverExpiry = untilStr;
-          } else if (untilStr is String) {
-            serverExpiry = DateTime.tryParse(untilStr)?.millisecondsSinceEpoch;
-          }
-          if (serverExpiry != null) {
-            await prefs.setInt(_premiumExpiryKey, serverExpiry);
-          }
-        }
-
-        if (data.containsKey('is_premium')) {
-          bool serverStatus = data['is_premium'];
-          if (serverStatus != cachedStatus) {
-            await prefs.setBool(_premiumStatusKey, serverStatus);
-            cachedStatus = serverStatus;
-          }
-        }
-      }
-    } catch (_) {
-      debugPrint("isPremium: Offline mode, using self-locking status: $cachedStatus");
-    }
-
-    return cachedStatus;
+    // 🔥 PERMANENT 100% FREE APP OVERRIDE 🔥
+    // The user requested to remove all locks and free trial limits completely.
+    return true; 
   }
 
   /// Gets usage count from Server (Server Authorized) mixed with local offline data.
@@ -205,8 +154,8 @@ class ApiService {
           await prefs.setBool(_premiumStatusKey, data['is_premium']);
         }
         
-        if (data.containsKey('premium_until')) {
-          final until = data['premium_until'];
+        if (data.containsKey('premium_expiry')) {
+          final until = data['premium_expiry'];
           if (until is int) {
             await prefs.setInt(_premiumExpiryKey, until);
           }
@@ -274,33 +223,6 @@ class ApiService {
     await prefs.setStringList(_offlineQueueKey, remainingQueue);
   }
 
-  /// Directly upgrades to premium (Registers with Server + Local Cache).
-  Future<bool> upgradeToPremium(String deviceId, String hardwareFingerprint) async {
-    try {
-      final response = await postSigned("/verify-device", {
-        'action': 'upgrade',
-        'device_id': deviceId,
-        'hardware_fingerprint': hardwareFingerprint,
-      });
-      
-      debugPrint("Upgrade Response (${response.statusCode}): ${response.body}");
-      
-      if (response.statusCode == 200) {
-        // PERMANENTLY UNLOCK LOCALLY (Set fallback 30-day expiry if server doesn't provide more detail)
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setBool(_premiumStatusKey, true);
-        
-        // Calculate 30 days from now in ms as a safety fallback
-        final fallbackExpiry = DateTime.now().add(const Duration(days: 30)).millisecondsSinceEpoch;
-        await prefs.setInt(_premiumExpiryKey, fallbackExpiry);
-        
-        return true;
-      }
-    } catch (e) {
-      debugPrint("Upgrade API Error: $e");
-    }
-    return false;
-  }
 
   /// Fetches the real-time USD to GHS exchange rate directly from Google.
   Future<double> fetchExchangeRate() async {

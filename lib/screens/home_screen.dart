@@ -6,8 +6,6 @@ import 'package:path/path.dart' as path;
 import 'package:share_plus/share_plus.dart';
 import 'dart:async';
 import 'package:flutter/services.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-
 import '../services/storage_service.dart';
 import '../services/pdf_service.dart';
 import '../services/spreadsheet_service.dart';
@@ -20,10 +18,6 @@ import 'editor_screen.dart';
 import 'settings_screen.dart';
 import 'spreadsheet_editor_screen.dart';
 import '../services/permission_service.dart';
-import '../services/identity_service.dart';
-import '../services/api_service.dart';
-import 'paywall_screen.dart';
-
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -38,12 +32,6 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _isImporting = false;
   bool _isSearching = false;
   final TextEditingController _searchController = TextEditingController();
-  
-  int _trialsRemaining = 3;
-  bool _isPremium = false;
-  bool _isTrialDataLoading = true;
-  // Completer used to block intents until real trial data is loaded from server.
-  final Completer<void> _trialDataReady = Completer<void>();
 
   final _platformChannel = const MethodChannel('com.pdfeditor/intent');
 
@@ -51,64 +39,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _loadDocuments();
-    _fetchTrialStatus();
     _setupIntentListener();
-  }
-
-  Future<void> _fetchTrialStatus() async {
-    try {
-      final identity = context.read<IdentityService>();
-      final api = context.read<ApiService>();
-      
-      // 1. IMPROVED: Load from local cache IMMEDIATELY for instant UI feedback (Offline Support)
-      final prefs = await SharedPreferences.getInstance();
-      final bool cachedPremium = prefs.getBool('is_premium_user_flag') ?? false;
-      final int cachedUsage = prefs.getInt('local_usage_count') ?? 0;
-      
-      if (mounted) {
-        setState(() {
-          _isPremium = cachedPremium;
-          _trialsRemaining = (3 - cachedUsage).clamp(0, 3);
-          if (cachedPremium) _isTrialDataLoading = false; // Show premium UI immediately if known
-        });
-      }
-
-      final deviceId = await identity.getDeviceId();
-      final fingerprint = await identity.getHardwareFingerprint();
-      
-      // 2. Ensure device is registered with backend on launch
-      final metadata = await identity.getDeviceMetadata();
-      await api.registerDevice(metadata, fingerprint: fingerprint);
-
-      // 3. Fetch latest from SERVER to keep in sync
-      final results = await Future.wait([
-        api.isPremium(deviceId, fingerprint),
-        api.getGlobalTrialUsage(deviceId, fingerprint),
-      ]);
-
-      final isPremium = results[0] as bool;
-      final usage = results[1] as int;
-      
-      if (mounted) {
-        setState(() {
-          _isPremium = isPremium;
-          _trialsRemaining = (3 - usage).clamp(0, 3);
-          _isTrialDataLoading = false;
-        });
-      }
-    } catch (e) {
-      debugPrint("Error fetching trial status: $e");
-      if (mounted) {
-        setState(() {
-          _isTrialDataLoading = false;
-        });
-      }
-    } finally {
-      // Always resolve the completer so pending intents are not blocked forever
-      if (!_trialDataReady.isCompleted) {
-        _trialDataReady.complete();
-      }
-    }
   }
 
   void _setupIntentListener() {
@@ -145,8 +76,6 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _handleIncomingSpreadsheet(String tempPath) async {
-    if (!mounted) return;
-    await _trialDataReady.future;
     if (!mounted) return;
 
     setState(() => _isImporting = true);
@@ -186,19 +115,6 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _handleIncomingPdf(String tempPath) async {
     if (!mounted) return;
 
-    // Wait for real trial data to be loaded from the server before checking.
-    // This prevents the race condition where intents fire before Supabase responds.
-    await _trialDataReady.future;
-
-    if (!mounted) return;
-
-    // --- PAYWALL CHECK ---
-    if (!_isPremium && _trialsRemaining <= 0) {
-      _showLimitReachedDialog("You have used all your 3 free trials. Upgrade to PRO to import more documents.");
-      return;
-    }
-    // ---------------------
-
     setState(() => _isImporting = true);
 
     try {
@@ -224,10 +140,6 @@ class _HomeScreenState extends State<HomeScreen> {
       );
 
       await storage.saveDocument(doc);
-      
-      if (!mounted) return;
-      await _incrementTrial('intent_import_pdf'); // Deduct a trial
-      
       await _loadDocuments(); // Refresh list
 
       if (!mounted) return;
@@ -272,11 +184,6 @@ class _HomeScreenState extends State<HomeScreen> {
   void _navigateToScanner() async {
     Navigator.pop(context); // close bottom sheet if open
 
-    if (!_isPremium && _trialsRemaining <= 0) {
-      _showLimitReachedDialog("You have used all your 3 free trials. Upgrade to PRO to scan more documents.");
-      return;
-    }
-
     await Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => const ScannerScreen()),
@@ -284,56 +191,7 @@ class _HomeScreenState extends State<HomeScreen> {
     
     if (!mounted) return;
     
-    // Check if a new document was actually added
-    final storage = context.read<StorageService>();
-    final docs = await storage.loadDocuments();
-    if (docs.length > _allDocuments.length) {
-      await _incrementTrial('scan_document');
-    }
-    
     _loadDocuments();
-  }
-
-  Future<void> _incrementTrial(String feature) async {
-    if (_isPremium) return;
-    
-    final identity = context.read<IdentityService>();
-    final api = context.read<ApiService>();
-    final deviceId = await identity.getDeviceId();
-    final fingerprint = await identity.getHardwareFingerprint();
-    
-    await api.trackUsage(
-      deviceId: deviceId, 
-      hardwareFingerprint: fingerprint,
-      featureName: feature,
-    );
-    await _fetchTrialStatus();
-  }
-
-  void _showLimitReachedDialog(String message) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Limit Reached'),
-        content: Text(message),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('OK'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const PaywallScreen()),
-              );
-            },
-            child: const Text('Go Premium'),
-          ),
-        ],
-      ),
-    );
   }
 
   void _openDocument(ScannedDocument doc) {
@@ -555,11 +413,6 @@ class _HomeScreenState extends State<HomeScreen> {
       return;
     }
 
-    if (!_isPremium && _trialsRemaining <= 0) {
-      _showLimitReachedDialog("You have used all your 3 free trials. Upgrade to PRO to import more documents.");
-      return;
-    }
-
     setState(() => _isImporting = true);
     try {
       final result = await FilePicker.platform.pickFiles(
@@ -594,8 +447,6 @@ class _HomeScreenState extends State<HomeScreen> {
         );
 
         await storage.saveDocument(doc);
-        if (!mounted) return;
-        await _incrementTrial('import_image');
         _loadDocuments();
 
         if (mounted) {
@@ -635,11 +486,6 @@ class _HomeScreenState extends State<HomeScreen> {
       return;
     }
 
-    if (!_isPremium && _trialsRemaining <= 0) {
-      _showLimitReachedDialog("You have used all your 3 free trials. Upgrade to PRO to import more documents.");
-      return;
-    }
-
     setState(() => _isImporting = true);
     try {
       final result = await FilePicker.platform.pickFiles(
@@ -665,8 +511,6 @@ class _HomeScreenState extends State<HomeScreen> {
         );
 
         await storage.saveDocument(doc);
-        if (!mounted) return;
-        await _incrementTrial('import_pdf');
         _loadDocuments();
 
         if (mounted) {
@@ -777,11 +621,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     parent: AlwaysScrollableScrollPhysics(),
                   ),
                   padding: const EdgeInsets.only(top: 8, bottom: 80),
-                  cacheExtent: 500,
-                  itemCount: _filteredDocuments.length + 1,
+                  itemCount: _filteredDocuments.length,
                   itemBuilder: (context, index) {
-                    if (index == 0) return _buildTrialInfo();
-                    final doc = _filteredDocuments[index - 1];
+                    final doc = _filteredDocuments[index];
                     return DocumentCard(
                       key: ValueKey(doc.id),
                       doc: doc,
@@ -826,111 +668,11 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildTrialInfo() {
-    if (_isPremium) return const SizedBox.shrink();
-    if (_isTrialDataLoading) {
-      return Container(
-        margin: const EdgeInsets.all(16),
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: Colors.grey.shade50,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.grey.shade200),
-        ),
-        child: const Center(
-          child: SizedBox(
-            height: 20,
-            width: 20,
-            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.indigo),
-          ),
-        ),
-      );
-    }
-
-    return Container(
-      margin: const EdgeInsets.all(16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: _trialsRemaining > 0 
-            ? [Colors.indigo.shade50, Colors.white]
-            : [Colors.orange.shade50, Colors.white],
-        ),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: _trialsRemaining > 0 
-              ? Colors.indigo.withValues(alpha: 0.2) 
-              : Colors.orange.withValues(alpha: 0.3),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              Icon(
-                _trialsRemaining > 0 ? Icons.auto_awesome : Icons.lock_clock,
-                color: _trialsRemaining > 0 ? Colors.indigo : Colors.orange,
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      _trialsRemaining > 0 
-                        ? '$_trialsRemaining Free Trials Remaining' 
-                        : 'Free Trials Finished',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                        color: _trialsRemaining > 0 ? Colors.indigo.shade900 : Colors.orange.shade900,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      _trialsRemaining > 0 
-                        ? 'Upload or Scan a PDF to use a trial.' 
-                        : 'Upgrade to PRO to continue using the app.',
-                      style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
-                    ),
-                  ],
-                ),
-              ),
-              if (_trialsRemaining <= 0)
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => const PaywallScreen()),
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.orange,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  ),
-                  child: const Text('UPGRADE'),
-                ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildEmptyState() {
     final bool isSearchEmpty =
         _isSearching && _searchController.text.isNotEmpty;
     return Column(
       children: [
-        if (!_isPremium) _buildTrialInfo(),
         Expanded(
           child: Center(
             child: Column(
