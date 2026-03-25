@@ -1070,13 +1070,7 @@ class _SpreadsheetEditorScreenState extends State<SpreadsheetEditorScreen>
                               _currentSheet.sheets[index].name,
                               index == _currentSheet.activeSheetIndex,
                               () => _switchSheet(index),
-<<<<<<< HEAD
                               () => _removeSheet(index),
-=======
-                              onDelete: _currentSheet.sheets.length > 1
-                                  ? () => _deleteSheet(index)
-                                  : null,
->>>>>>> e33dd87 (Update APK to latest version and fix logo corners)
                             );
                           }),
                           IconButton(
