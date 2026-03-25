@@ -25,8 +25,6 @@ class SettingsScreen extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          _buildSubscriptionSection(context),
-          const SizedBox(height: 16),
           _buildCardSection(context, 'Support & Feedback', [
             ListTile(
               leading: Container(
@@ -269,65 +267,6 @@ class SettingsScreen extends StatelessWidget {
           letterSpacing: 1.2,
         ),
       ),
-    );
-  }
-
-  Widget _buildSubscriptionSection(BuildContext context) {
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildSectionHeader(context, 'Plan'),
-        Card(
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-            side: BorderSide(
-              color: Colors.green.withAlpha(80),
-              width: 1.5,
-            ),
-          ),
-          child: Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Colors.green.withAlpha(20),
-                  Colors.green.withAlpha(5),
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Column(
-              children: [
-                ListTile(
-                  leading: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: const BoxDecoration(
-                      color: Colors.green,
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(Icons.check_circle, color: Colors.white),
-                  ),
-                  title: const Text(
-                    'Free Plan',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  subtitle: const Text('Unlimited Access — No subscription needed'),
-                ),
-                const Padding(
-                  padding: EdgeInsets.fromLTRB(16, 0, 16, 12),
-                  child: Text(
-                    'All features are completely free. Scan, import, and edit unlimited documents.',
-                    style: TextStyle(fontSize: 12, color: Colors.black87),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
     );
   }
 

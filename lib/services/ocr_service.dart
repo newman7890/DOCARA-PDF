@@ -101,7 +101,21 @@ class OCRService {
       }
     }
 
-    return result.trim();
+    return _cleanOcrText(result.trim());
+  }
+
+  /// Cleans up common OCR specific misreadings
+  String _cleanOcrText(String text) {
+    // Fix superscript ordinal indicators misread as '%' (e.g., 21% -> 21st)
+    var cleaned = text.replaceAllMapped(RegExp(r'\b(1|21|31)%'), (m) => '${m[1]}st');
+    cleaned = cleaned.replaceAllMapped(RegExp(r'\b(2|22)%'), (m) => '${m[1]}nd');
+    cleaned = cleaned.replaceAllMapped(RegExp(r'\b(3|23)%'), (m) => '${m[1]}rd');
+    // Replace 'th' ordinals similarly, restricting to end of word context
+    cleaned = cleaned.replaceAllMapped(
+      RegExp(r'\b([4-9]|1[0-9]|2[04-9]|30)%(?=\s|$)'), 
+      (m) => '${m[1]}th'
+    );
+    return cleaned;
   }
 
   /// Extracts blocks from an image for interactive use in the editor.

@@ -148,6 +148,25 @@ class Spreadsheet {
     );
   }
 
+  Spreadsheet removeSheet(int index) {
+    if (sheets.length <= 1) return this;
+    final newSheets = List<SpreadsheetSheet>.from(sheets);
+    newSheets.removeAt(index);
+
+    int newActiveIndex = activeSheetIndex;
+    if (activeSheetIndex > index) {
+      newActiveIndex = activeSheetIndex - 1;
+    } else if (activeSheetIndex == index) {
+      newActiveIndex = activeSheetIndex.clamp(0, newSheets.length - 1);
+    }
+
+    return copyWith(
+      sheets: newSheets,
+      activeSheetIndex: newActiveIndex,
+      dateModified: DateTime.now(),
+    );
+  }
+
   Spreadsheet copyWith({
     String? title,
     List<SpreadsheetSheet>? sheets,

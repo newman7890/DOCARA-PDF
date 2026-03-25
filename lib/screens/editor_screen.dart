@@ -626,7 +626,7 @@ class _EditorScreenState extends State<EditorScreen> {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
           ),
-          title: const Row(
+          title: Row(
             children: [
               Icon(Icons.warning_amber_rounded, color: Colors.orange),
               SizedBox(width: 10),

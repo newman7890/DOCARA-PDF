@@ -1015,20 +1015,21 @@ class _SpreadsheetEditorScreenState extends State<SpreadsheetEditorScreen>
                             children: _currentSheet.sheets.asMap().entries.map((
                               entry,
                             ) {
-                              return ListTile(
-                                title: Text(entry.value.name),
-                                leading: const Icon(Icons.table_chart),
-                                trailing: _currentSheet.sheets.length > 1
-                                    ? IconButton(
-                                        icon: const Icon(Icons.delete_outline, color: Colors.red),
-                                        onPressed: () {
-                                          Navigator.pop(ctx);
-                                          _removeSheet(entry.key);
-                                        },
-                                      )
-                                    : null,
-                                selected:
-                                    entry.key == _currentSheet.activeSheetIndex,
+                                return ListTile(
+                                  title: Text(entry.value.name),
+                                  leading: const Icon(Icons.table_chart),
+                                  selected:
+                                      entry.key == _currentSheet.activeSheetIndex,
+                                  trailing: _currentSheet.sheets.length > 1
+                                      ? IconButton(
+                                          icon: const Icon(Icons.delete_outline,
+                                              size: 20, color: Colors.red),
+                                          onPressed: () {
+                                            Navigator.pop(ctx);
+                                            _removeSheet(entry.key);
+                                          },
+                                        )
+                                      : null,
                                 onTap: () {
                                   _switchSheet(entry.key);
                                   Navigator.pop(ctx);
@@ -1069,7 +1070,13 @@ class _SpreadsheetEditorScreenState extends State<SpreadsheetEditorScreen>
                               _currentSheet.sheets[index].name,
                               index == _currentSheet.activeSheetIndex,
                               () => _switchSheet(index),
+<<<<<<< HEAD
                               () => _removeSheet(index),
+=======
+                              onDelete: _currentSheet.sheets.length > 1
+                                  ? () => _deleteSheet(index)
+                                  : null,
+>>>>>>> e33dd87 (Update APK to latest version and fix logo corners)
                             );
                           }),
                           IconButton(
@@ -1085,10 +1092,6 @@ class _SpreadsheetEditorScreenState extends State<SpreadsheetEditorScreen>
                         ],
                       ),
                     ),
-                  ),
-                  const Text(
-                    'Ready',
-                    style: TextStyle(fontSize: 12, color: Colors.grey),
                   ),
                   const Spacer(),
                   IconButton(
@@ -1221,7 +1224,7 @@ class _SpreadsheetEditorScreenState extends State<SpreadsheetEditorScreen>
       onTap: onTap,
       onLongPress: onLongPress,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
+        padding: const EdgeInsets.symmetric(horizontal: 12),
         decoration: BoxDecoration(
           color: isActive ? Colors.white : Colors.transparent,
           border: isActive

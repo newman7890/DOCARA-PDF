@@ -691,15 +691,29 @@ class PDFService {
         }
         lineAdjusted = false;
 
-        if (lineText.isEmpty) {
-          // No extra jump here, lineIdx > 0 above handles the newline
-          continue;
-        }
-
         // Update maxLineHeight based on this chunk's requirements for the current line
         // Standard spacing (1.2 multiplier)
         if (chunk.fontSize * 1.2 > maxLineHeight) {
           maxLineHeight = chunk.fontSize * 1.2;
+        }
+
+        // Handle bullet points manually for circular appearance (BEFORE isEmpty check)
+        if (lineIdx == 0 && chunk.isBullet) {
+            double bulletSize = chunk.fontSize * 0.28;
+            // Center bullet vertically relative to text height
+            double bulletY = y + (chunk.fontSize * 0.7) - (bulletSize / 2);
+            page.graphics.drawEllipse(
+                Rect.fromLTWH(x + 2, bulletY, bulletSize, bulletSize),
+                brush: PdfSolidBrush(chunk.color)
+            );
+            x += bulletSize + 8;
+            // Don't continue here if there might be text in the same chunk, 
+            // but for bullets, the chunk text is empty anyway.
+        }
+
+        if (lineText.isEmpty) {
+          // No extra jump here, lineIdx > 0 above handles the newline
+          continue;
         }
 
         final words = lineText.split(' ');
@@ -904,7 +918,7 @@ class PDFService {
     // Given the user specifically asked for it inline, we might want to skip the bottom one if [:sig:] was found.
     // Let's add a flag to track if it was drawn.
     // Actually, let's keep it simple: if the user adds [:sig:], it's inline. If not, it's at the bottom.
-    bool signaturePlaced = chunks.any((c) => c.isSignature);
+    bool signaturePlaced = chunks.any((c) => c.isSignature == true);
 
     if (!signaturePlaced && signaturePoints != null && signaturePoints.isNotEmpty) {
       const double sigBoxWidth = 180.0;
@@ -1282,15 +1296,16 @@ class PDFService {
         // Bullet
         chunks.add(
           StyledChunk(
-            text: '• ',
+            text: '', // Empty text because we draw the circle manually
             style: PdfFontStyle.bold,
             fontSize: currentFontSize,
             color: currentColor,
+            isBullet: true,
           ),
         );
         chunks.addAll(
           _parseRecursive(
-            mText.substring(2).trim(),
+            mText.substring(2),
             currentStyle,
             currentFontSize,
             currentColor,
@@ -1311,7 +1326,7 @@ class PDFService {
         );
         chunks.addAll(
           _parseRecursive(
-            mText.substring(dotIndex > 0 ? dotIndex + 2 : 2).trim(),
+            mText.substring(dotIndex > 0 ? dotIndex + 2 : 2),
             currentStyle,
             currentFontSize,
             currentColor,
@@ -1829,6 +1844,7 @@ class StyledChunk {
   final bool isCentered;
   final bool isRight;
   final bool isField;
+  final bool isBullet;
   final bool isSignature;
 
   StyledChunk({
@@ -1841,6 +1857,7 @@ class StyledChunk {
     this.isCentered = false,
     this.isRight = false,
     this.isField = false,
+    this.isBullet = false,
     this.isSignature = false,
   });
 
@@ -1854,6 +1871,7 @@ class StyledChunk {
     bool? isCentered,
     bool? isRight,
     bool? isField,
+    bool? isBullet,
     bool? isSignature,
   }) {
     return StyledChunk(
@@ -1866,6 +1884,7 @@ class StyledChunk {
       isCentered: isCentered ?? this.isCentered,
       isRight: isRight ?? this.isRight,
       isField: isField ?? this.isField,
+      isBullet: isBullet ?? this.isBullet,
       isSignature: isSignature ?? this.isSignature,
     );
   }

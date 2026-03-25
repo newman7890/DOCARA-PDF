@@ -1,11 +1,12 @@
 import 'dart:io';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:path/path.dart' as path;
 import 'package:share_plus/share_plus.dart';
-import 'dart:async';
 import 'package:flutter/services.dart';
+
 import '../services/storage_service.dart';
 import '../services/pdf_service.dart';
 import '../services/spreadsheet_service.dart';
@@ -18,6 +19,7 @@ import 'editor_screen.dart';
 import 'settings_screen.dart';
 import 'spreadsheet_editor_screen.dart';
 import '../services/permission_service.dart';
+
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -26,7 +28,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  List<ScannedDocument> _allDocuments = []; // Cache for filtering
+  List<ScannedDocument> _allDocuments = [];
   List<ScannedDocument> _filteredDocuments = [];
   bool _isLoading = true;
   bool _isImporting = false;
@@ -99,7 +101,7 @@ class _HomeScreenState extends State<HomeScreen> {
           MaterialPageRoute(
             builder: (_) => SpreadsheetEditorScreen(sheet: newSheet),
           ),
-        );
+        ).then((_) => _loadDocuments());
       } else {
         throw Exception("Failed to parse spreadsheet format");
       }
@@ -144,15 +146,13 @@ class _HomeScreenState extends State<HomeScreen> {
 
       if (!mounted) return;
       setState(() => _isImporting = false);
-
-      // Auto-open in the text extractor
       _openTextEditor(doc);
     } catch (e) {
       if (!mounted) return;
       setState(() => _isImporting = false);
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Failed to import PDF: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to import PDF: $e')),
+      );
     }
   }
 
@@ -183,14 +183,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _navigateToScanner() async {
     Navigator.pop(context); // close bottom sheet if open
-
     await Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => const ScannerScreen()),
     );
-    
     if (!mounted) return;
-    
     _loadDocuments();
   }
 
@@ -353,18 +350,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   subtitle: 'Create a new data grid with formulas',
                   onTap: () {
                     Navigator.pop(ctx);
-                    Navigator.pushNamed(context, '/spreadsheets');
-                  },
-                ),
-                const Divider(indent: 16, endIndent: 16),
-                _buildOption(
-                  icon: Icons.file_upload,
-                  color: Colors.blue,
-                  label: 'Upload Spreadsheet',
-                  subtitle: 'Pick .xlsx or .csv from your phone',
-                  onTap: () async {
-                    Navigator.pop(ctx);
-                    Navigator.pushNamed(context, '/spreadsheets');
+                    Navigator.pushNamed(context, '/spreadsheets')
+                        .then((_) => _loadDocuments());
                   },
                 ),
                 const SizedBox(height: 8),
@@ -553,7 +540,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 children: [
                   Image.asset(
                     'assets/images/app_logo.png',
-                    height: 24,
+                    height: 28,
                     errorBuilder: (context, error, stackTrace) => const Icon(
                       Icons.description_rounded,
                       color: Colors.white,
@@ -621,6 +608,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     parent: AlwaysScrollableScrollPhysics(),
                   ),
                   padding: const EdgeInsets.only(top: 8, bottom: 80),
+                  cacheExtent: 500,
                   itemCount: _filteredDocuments.length,
                   itemBuilder: (context, index) {
                     final doc = _filteredDocuments[index];
