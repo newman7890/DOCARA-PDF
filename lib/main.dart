@@ -31,6 +31,11 @@ void main() async {
   final bool isSuspicious = await securityService.isSuspicious();
   debugPrint("Device Security Status: ${isSuspicious ? 'Suspicious' : 'Secure'}");
 
+  // ── Desert Architecture Memory Cap ──
+  // Limit ImageCache to 1 image and 10MB to prevent native heap bloat on A32.
+  PaintingBinding.instance.imageCache.maximumSize = 1;
+  PaintingBinding.instance.imageCache.maximumSizeBytes = 10 * 1024 * 1024;
+
   runApp(
     MultiProvider(
       providers: [

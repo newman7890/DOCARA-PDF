@@ -27,6 +27,7 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
   bool _isReading = false;
   String _targetLanguage = 'en';
   bool _isTranslating = false;
+  bool _isClosing = false;
 
   @override
   void initState() {
@@ -130,6 +131,9 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
       if (!mounted) {
         return;
       }
+      // The provided snippet seems to be for a different context (e.g., navigating from Editor to Viewer).
+      // Applying the imageCache.clear() as requested, but not the navigation or undefined variables.
+      PaintingBinding.instance.imageCache.clear();
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Playback failed: $e')));
@@ -345,11 +349,26 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
           IconButton(
             icon: const Icon(Icons.edit_note_rounded),
             tooltip: 'Edit PDF',
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => EditorScreen(document: widget.document),
+            onPressed: () async {
+              final navigator = Navigator.of(context);
+              
+              // Clear cache before transitioning to free up RAM for the Editor
+              if (mounted) {
+                setState(() => _isClosing = true);
+              }
+              
+              // Give the OS 200ms to fully detach the native SfPdfViewer surfaces
+              await Future.delayed(const Duration(milliseconds: 200));
+
+              if (!mounted) return;
+              
+              PaintingBinding.instance.imageCache.clear();
+              navigator.pushReplacement(
+                PageRouteBuilder(
+                  pageBuilder: (context, animation, secondaryAnimation) => EditorScreen(document: widget.document),
+                  transitionDuration: Duration.zero,
+                  reverseTransitionDuration: Duration.zero,
+                  settings: const RouteSettings(name: '/editor'),
                 ),
               );
             },
@@ -361,8 +380,10 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
           ),
         ],
       ),
-      body: Column(
-        children: [
+      body: _isClosing 
+        ? const SizedBox.expand()
+        : Column(
+            children: [
           Expanded(
             child: SfPdfViewer.file(
               File(widget.document.filePath),

@@ -64,6 +64,14 @@ class MainActivity : FlutterActivity() {
                         "text/csv", "text/comma-separated-values" -> extension = ".csv"
                         "application/vnd.ms-excel" -> extension = ".xls"
                         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" -> extension = ".xlsx"
+                        "image/jpeg" -> extension = ".jpg"
+                        "image/png" -> extension = ".png"
+                        // Fallback catch for generic image intents
+                        else -> {
+                            if (mimeType.startsWith("image/")) {
+                                extension = ".jpg"
+                            }
+                        }
                     }
                 }
 

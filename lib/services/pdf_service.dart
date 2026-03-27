@@ -1657,6 +1657,12 @@ class PDFService {
               );
             }
           } else if (edit is DrawingEditItem && edit.points.isNotEmpty) {
+            final double pw = page.getClientSize().width;
+            final double ph = page.getClientSize().height;
+
+            // Dynamically scale stroke width: assume a baseline screen width of 400
+            final double scaledStrokeWidth = edit.strokeWidth * (pw / 400.0);
+
             final PdfPen pen = PdfPen(
               PdfColor(
                 (edit.color.r * 255).round().clamp(0, 255),
@@ -1664,12 +1670,10 @@ class PDFService {
                 (edit.color.b * 255).round().clamp(0, 255),
                 (edit.color.a * 255).round().clamp(0, 255),
               ),
-              width: edit.strokeWidth,
+              width: scaledStrokeWidth,
             );
             pen.lineCap = PdfLineCap.round;
-
-            final double pw = page.getClientSize().width;
-            final double ph = page.getClientSize().height;
+            pen.lineJoin = PdfLineJoin.round;
 
             for (int i = 0; i < edit.points.length - 1; i++) {
               final p1 = Offset(edit.points[i].dx * pw, edit.points[i].dy * ph);

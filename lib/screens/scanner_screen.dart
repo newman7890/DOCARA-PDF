@@ -25,8 +25,7 @@ class ScannerScreen extends StatefulWidget {
 class _ScannerScreenState extends State<ScannerScreen> {
   DocumentScanner? _documentScanner;
   bool _isScanning = false;
-  ScanMode _selectedMode = ScanMode.document;
-  ScanFilter _selectedFilter = ScanFilter.original; // Safe default
+  ScanMode _selectedMode = ScanMode.document; // Safe default
   String? _idFrontPath;
 
   @override
@@ -125,7 +124,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
       final outputPath = await storage.getNewFilePath("${prefix}_$timestamp");
       final tempDir = await getTemporaryDirectory();
 
-      debugPrint("SCAN: Processing ${images.length} images with filter: $_selectedFilter");
+      debugPrint("SCAN: Processing ${images.length} images");
       List<String> stableImages = [];
       for (int i = 0; i < images.length; i++) {
         String src = images[i];
@@ -140,7 +139,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
         }
       }
 
-      await pdfService.imagesToPdf(stableImages, outputPath, filter: _selectedFilter);
+      await pdfService.imagesToPdf(stableImages, outputPath);
       
       final doc = ScannedDocument(
         id: DateTime.now().toIso8601String(),
@@ -179,61 +178,52 @@ class _ScannerScreenState extends State<ScannerScreen> {
 
   Widget _buildModeItem(String label, IconData icon, ScanMode mode) {
     final isSelected = _selectedMode == mode;
-    return GestureDetector(
-      onTap: () {
-        HapticFeedback.selectionClick();
-        setState(() {
-          _selectedMode = mode;
-          _idFrontPath = null;
-        });
-      },
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: isSelected ? Colors.indigo : Colors.transparent,
-              shape: BoxShape.circle,
-              boxShadow: isSelected ? [BoxShadow(color: Colors.indigo.withValues(alpha: 0.3), blurRadius: 8, offset: const Offset(0, 4))] : [],
-            ),
-            child: Icon(icon, color: isSelected ? Colors.white : Colors.grey[600], size: 24),
+    return Expanded(
+      child: GestureDetector(
+        onTap: () {
+          HapticFeedback.selectionClick();
+          setState(() {
+            _selectedMode = mode;
+            _idFrontPath = null;
+          });
+        },
+        behavior: HitTestBehavior.opaque,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeOutCubic,
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          decoration: BoxDecoration(
+            color: isSelected ? Colors.white : Colors.transparent,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: isSelected
+                ? [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.08),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    )
+                  ]
+                : [],
           ),
-          const SizedBox(height: 6),
-          Text(
-            label,
-            style: TextStyle(
-              color: isSelected ? Colors.indigo : Colors.grey[600],
-              fontSize: 12,
-              fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFilterItem(String label, ScanFilter filter) {
-    final isSelected = _selectedFilter == filter;
-    return GestureDetector(
-      onTap: () {
-        HapticFeedback.selectionClick();
-        setState(() => _selectedFilter = filter);
-      },
-      child: Container(
-        margin: const EdgeInsets.only(right: 8),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          color: isSelected ? Colors.indigo.shade50 : Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: isSelected ? Colors.indigo : Colors.grey.shade300),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: isSelected ? Colors.indigo : Colors.grey.shade700,
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-            fontSize: 13,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                icon,
+                color: isSelected ? const Color(0xFF4F46E5) : Colors.grey.shade500, // Premium Indigo
+                size: 24,
+              ),
+              const SizedBox(height: 6),
+              Text(
+                label,
+                style: TextStyle(
+                  color: isSelected ? const Color(0xFF4F46E5) : Colors.grey.shade500,
+                  fontSize: 12,
+                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
+                  letterSpacing: 0.3,
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -260,16 +250,21 @@ class _ScannerScreenState extends State<ScannerScreen> {
 
           // 2. Top Floating Mode Selector
           Positioned(
-            top: 60,
+            top: MediaQuery.of(context).padding.top + 16,
             left: 20,
             right: 20,
             child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 12),
+              padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.9),
+                color: Colors.grey.shade100.withValues(alpha: 0.95),
                 borderRadius: BorderRadius.circular(24),
-                boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 15, offset: const Offset(0, 5))],
-                border: Border.all(color: Colors.white),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.1),
+                    blurRadius: 15,
+                    offset: const Offset(0, 5),
+                  ),
+                ],
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -318,58 +313,104 @@ class _ScannerScreenState extends State<ScannerScreen> {
                   else
                     Column(
                       children: [
-                        // Filter Selection
-                        const Align(
-                          alignment: Alignment.centerLeft,
-                          child: Text('SCAN FILTER', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1, color: Colors.grey)),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFEEF2FF), // Very light indigo
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            _selectedMode == ScanMode.idCard && _idFrontPath != null
+                                ? 'FRONT SIDE CAPTURED'
+                                : 'READY TO SCAN',
+                            style: const TextStyle(
+                              fontSize: 11,
+                              letterSpacing: 1.5,
+                              fontWeight: FontWeight.w800,
+                              color: Color(0xFF4338CA), // Deep indigo
+                            ),
+                          ),
                         ),
-                        const SizedBox(height: 10),
-                        SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
+                        const SizedBox(height: 16),
+                        Text(
+                          _selectedMode == ScanMode.document
+                              ? 'Automatic boundary detection is active'
+                              : _selectedMode == ScanMode.idCard
+                                  ? (_idFrontPath == null ? 'Center the front of your ID card' : 'Great! Now capture the back side')
+                                  : 'Align the passport info page',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: Colors.grey.shade800,
+                            fontSize: 16,
+                            letterSpacing: -0.2,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.amber.shade50,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.amber.shade200),
+                          ),
                           child: Row(
                             children: [
-                              _buildFilterItem('Original', ScanFilter.original),
-                              _buildFilterItem('Enhanced ✨', ScanFilter.enhanced),
-                              _buildFilterItem('Grayscale', ScanFilter.grayscale),
-                              _buildFilterItem('Black & White', ScanFilter.blackAndWhite),
+                              Icon(Icons.lightbulb_outline_rounded, color: Colors.amber.shade800, size: 20),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  'For perfect results, place your ${_selectedMode.name.replaceAll('idCard', 'ID').replaceAll('passport', 'passport').replaceAll('document', 'document')} on a flat WHITE background before scanning.',
+                                  style: TextStyle(color: Colors.amber.shade900, fontSize: 12, fontWeight: FontWeight.w600),
+                                ),
+                              ),
                             ],
                           ),
                         ),
                         const SizedBox(height: 24),
-                        
-                        Text(
-                          _selectedMode == ScanMode.idCard && _idFrontPath != null
-                              ? 'FRONT SIDE CAPTURED'
-                              : 'READY TO SCAN',
-                          style: TextStyle(fontSize: 12, letterSpacing: 2, fontWeight: FontWeight.bold, color: Colors.indigo.shade400),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          _selectedMode == ScanMode.document
-                              ? 'Automatic boundary detection enabled.'
-                              : _selectedMode == ScanMode.idCard
-                                  ? (_idFrontPath == null ? 'Center the front of your ID card.' : 'Great! Now capture the back side.')
-                                  : 'Align the passport info page.',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(color: Colors.grey[700], fontSize: 15, fontWeight: FontWeight.w500),
-                        ),
-                        const SizedBox(height: 32),
 
                         SizedBox(
                           width: double.infinity,
-                          child: ElevatedButton.icon(
-                            onPressed: _startScan,
-                            icon: Icon(_selectedMode == ScanMode.idCard && _idFrontPath != null ? Icons.flip_rounded : Icons.camera_alt_rounded),
-                            label: Text(
-                              _selectedMode == ScanMode.idCard && _idFrontPath != null ? 'CAPTURE BACK SIDE' : 'START SCANNING',
-                              style: const TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(20),
+                              gradient: const LinearGradient(
+                                colors: [Color(0xFF6366F1), Color(0xFF4F46E5)], // Modern Indigo Gradient
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: const Color(0xFF4F46E5).withValues(alpha: 0.3),
+                                  blurRadius: 20,
+                                  offset: const Offset(0, 8),
+                                ),
+                              ],
                             ),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.indigo,
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 20),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                              elevation: 4,
+                            child: ElevatedButton(
+                              onPressed: _startScan,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.transparent,
+                                foregroundColor: Colors.white,
+                                shadowColor: Colors.transparent,
+                                padding: const EdgeInsets.symmetric(vertical: 20),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(_selectedMode == ScanMode.idCard && _idFrontPath != null ? Icons.flip_rounded : Icons.document_scanner_rounded),
+                                  const SizedBox(width: 12),
+                                  Text(
+                                    _selectedMode == ScanMode.idCard && _idFrontPath != null ? 'CAPTURE BACK SIDE' : 'START SCANNING',
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      letterSpacing: 1.2,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                         ),

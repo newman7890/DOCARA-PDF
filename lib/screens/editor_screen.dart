@@ -758,8 +758,27 @@ class _EditorScreenState extends State<EditorScreen> {
                     child: _ToolButton(
                       icon: Icons.brush_rounded,
                       label: 'Draw',
-                      isActive: editor.activeTool == EditType.drawing,
-                      onTap: () => editor.setActiveTool(EditType.drawing),
+                      isActive: editor.activeTool == EditType.drawing && editor.currentColor != Colors.white,
+                      onTap: () {
+                        editor.setActiveTool(EditType.drawing);
+                        // Restore a visible color if we were just using the Eraser
+                        if (editor.currentColor == Colors.white) {
+                          editor.setColor(Colors.red);
+                          editor.setStrokeWidth(3.0);
+                        }
+                      },
+                    ),
+                  ),
+                  Expanded(
+                    child: _ToolButton(
+                      icon: Icons.cleaning_services_rounded,
+                      label: 'Eraser',
+                      isActive: editor.activeTool == EditType.drawing && editor.currentColor == Colors.white,
+                      onTap: () {
+                        editor.setActiveTool(EditType.drawing);
+                        editor.setColor(Colors.white);
+                        editor.setStrokeWidth(16.0); // Thick brush for erasing/white-out
+                      },
                     ),
                   ),
                   Expanded(

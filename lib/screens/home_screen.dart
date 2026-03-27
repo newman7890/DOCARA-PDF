@@ -19,6 +19,7 @@ import 'editor_screen.dart';
 import 'settings_screen.dart';
 import 'spreadsheet_editor_screen.dart';
 import '../services/permission_service.dart';
+import '../models/pdf_edit_overlay.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -34,6 +35,8 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _isImporting = false;
   bool _isSearching = false;
   final TextEditingController _searchController = TextEditingController();
+  bool _isSaving = false;
+  String _saveMessage = 'Saving...';
 
   final _platformChannel = const MethodChannel('com.pdfeditor/intent');
 
@@ -72,8 +75,36 @@ class _HomeScreenState extends State<HomeScreen> {
     final lowerPath = path.toLowerCase();
     if (lowerPath.endsWith('.csv') || lowerPath.endsWith('.xls') || lowerPath.endsWith('.xlsx')) {
       await _handleIncomingSpreadsheet(path);
+    } else if (lowerPath.endsWith('.jpg') || lowerPath.endsWith('.jpeg') || lowerPath.endsWith('.png')) {
+      await _handleIncomingImage(path);
     } else {
       await _handleIncomingPdf(path);
+    }
+  }
+
+  Future<void> _handleIncomingImage(String imagePath) async {
+    if (!mounted) return;
+    setState(() => _isImporting = true);
+
+    try {
+      final storage = context.read<StorageService>();
+      final pdfService = context.read<PDFService>();
+      
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final outputPath = await storage.getNewFilePath("Image_Import_$timestamp");
+      final newPdfFile = await pdfService.imagesToPdf([imagePath], outputPath);
+      
+      if (!mounted) return;
+      setState(() => _isImporting = false);
+      
+      // Route the newly minted PDF through the standard ingest process
+      await _handleIncomingPdf(newPdfFile.path);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isImporting = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to import image: $e')),
+      );
     }
   }
 
@@ -146,7 +177,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
       if (!mounted) return;
       setState(() => _isImporting = false);
-      _openTextEditor(doc);
+      _openDocument(doc);
     } catch (e) {
       if (!mounted) return;
       setState(() => _isImporting = false);
@@ -208,8 +239,85 @@ class _HomeScreenState extends State<HomeScreen> {
   void _openPdfEditor(ScannedDocument doc) {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => EditorScreen(document: doc)),
-    ).then((_) => _loadDocuments());
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) => EditorScreen(document: doc),
+        transitionDuration: Duration.zero,
+        reverseTransitionDuration: Duration.zero,
+        settings: const RouteSettings(name: '/editor'),
+      ),
+    ).then((result) async {
+      if (result != null && result is Map<int, List<PdfEditItem>>) {
+        // ── Absolute Separation Silence ──
+        // Wait 500ms before starting the save process to ensure the Editor
+        // and its native surfaces are 100% destroyed.
+        await Future.delayed(const Duration(milliseconds: 500));
+        _performColdSave(doc, result);
+      } else {
+        _loadDocuments();
+      }
+    });
+  }
+
+  Future<void> _performColdSave(
+    ScannedDocument doc,
+    Map<int, List<PdfEditItem>> edits,
+  ) async {
+    if (!mounted) return;
+
+    setState(() {
+      _isSaving = true;
+      _saveMessage = 'Optimizing for A32...';
+    });
+
+    try {
+      final pdfService = context.read<PDFService>();
+      final storage = context.read<StorageService>();
+
+      // ── Absolute Stillness Architecture ──
+      // Increase from 4.0s -> 5.0s to ensure Samsung's driver completely settles.
+      PaintingBinding.instance.imageCache.clear();
+      PaintingBinding.instance.imageCache.clear();
+      await Future.delayed(const Duration(milliseconds: 5000));
+      
+      if (!mounted) return;
+      setState(() => _saveMessage = 'Generating HD Passport...');
+
+      // Flatten edits using a background isolate for watchdog safety.
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final newPath = await storage.getNewFilePath('Edited_$timestamp');
+
+      await pdfService.flattenEditsToPdf(
+        doc.filePath,
+        edits,
+        newPath,
+      );
+
+      final updatedDoc = doc.copyWith(
+        filePath: newPath,
+        overlayEdits: edits,
+      );
+
+      await storage.saveDocument(updatedDoc);
+
+      if (mounted) {
+        setState(() => _isSaving = false);
+        _loadDocuments();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Saved successfully!')),
+        );
+      }
+    } catch (e) {
+      debugPrint("COLD SAVE ERROR: $e");
+      if (mounted) {
+        setState(() => _isSaving = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Save failed: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   void _shareDocument(ScannedDocument doc) {
@@ -519,6 +627,39 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // ── Vox Architecture "Black Hole" Strategy ──
+    // If saving, return ONLY the black stillness screen. This stops all Frame Draw 
+    // contention and texture decodes from thumbnails during the critical transition.
+    if (_isSaving) {
+      return Scaffold(
+        backgroundColor: Colors.black,
+        body: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'STABILIZING HARDWARE...',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white70,
+                  letterSpacing: 2,
+                ),
+              ),
+              const SizedBox(height: 20),
+              Text(
+                _saveMessage,
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
         centerTitle: false,
@@ -538,12 +679,17 @@ class _HomeScreenState extends State<HomeScreen> {
             : Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Image.asset(
-                    'assets/images/app_logo.png',
-                    height: 28,
-                    errorBuilder: (context, error, stackTrace) => const Icon(
-                      Icons.description_rounded,
-                      color: Colors.white,
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: Image.asset(
+                      'assets/images/app_logo.png',
+                      height: 32,
+                      fit: BoxFit.contain,
+                      errorBuilder: (context, error, stackTrace) => const Icon(
+                        Icons.description_rounded,
+                        color: Colors.white,
+                        size: 24,
+                      ),
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -624,6 +770,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     );
                   },
                 ),
+          // Saving overlay - REPLACED BY TOP-LEVEL "BLACK HOLE" CHECK
+
           // Importing overlay
           if (_isImporting)
             Container(

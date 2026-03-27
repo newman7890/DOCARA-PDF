@@ -1,0 +1,6 @@
+Analyzing DOCARA PDF...                                         
+
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\spreadsheet_editor_screen.dart:127:40 - deprecated_member_use
+   info - 'value' is deprecated and shouldn't be used. Use initialValue instead. This will set the initial value for the form field. This feature was deprecated after v3.33.0-1.0.pre - lib\screens\spreadsheet_editor_screen.dart:434:17 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\spreadsheet_editor_screen.dart:965:54 - deprecated_member_use
+
