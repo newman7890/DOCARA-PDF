@@ -15,6 +15,7 @@ import '../services/storage_service.dart';
 import '../services/ocr_table_service.dart';
 import '../models/scanned_document.dart';
 import 'viewer_screen.dart';
+import 'spreadsheet_chart_screen.dart';
 
 class SpreadsheetEditorScreen extends StatefulWidget {
   final Spreadsheet? sheet;
@@ -575,6 +576,17 @@ class _SpreadsheetEditorScreenState extends State<SpreadsheetEditorScreen>
     }
   }
 
+  void _showChartScreen() {
+    _commitCurrentEdit();
+    _saveCurrentSheetToModel();
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => SpreadsheetChartScreen(sheet: _currentSheet.activeSheet),
+      ),
+    );
+  }
+
   void _switchSheet(int index) async {
     if (index == _currentSheet.activeSheetIndex) return;
 
@@ -895,6 +907,11 @@ class _SpreadsheetEditorScreenState extends State<SpreadsheetEditorScreen>
                         Icons.camera_alt,
                         'Scan Table',
                         _scanTable,
+                      ),
+                      _buildRibbonAction(
+                        Icons.pie_chart,
+                        'Charts',
+                        _showChartScreen,
                       ),
                     ]),
                   if (_ribbonTabController.index == 3) // Data

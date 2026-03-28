@@ -2,6 +2,15 @@
 <html lang="en">
 
 <head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-TNWJYD8EJ5"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-TNWJYD8EJ5');
+    </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Docara | Professional Document Toolkit</title>
@@ -42,7 +51,7 @@
                     <p class="hero-subtitle">The most powerful document toolkit for your mobile device. AI powered
                         auto cropping and edge detection ensure perfect scans every time.</p>
                     <div class="cta-group">
-                        <a href="Latest_Builds/Docara_v1.2.apk" class="btn btn-primary" download>
+                        <a href="Latest_Builds/Docara_v1.2.apk" class="btn btn-primary" download onclick="gtag('event', 'download_apk', {'event_category': 'App', 'event_label': 'Docara v1.2'});">
                             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>

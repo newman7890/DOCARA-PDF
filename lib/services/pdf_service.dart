@@ -1,6 +1,6 @@
 import 'dart:io';
-import 'dart:ui';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:image/image.dart' as img;
 import 'package:syncfusion_flutter_pdf/pdf.dart';
 import 'package:pdfx/pdfx.dart' as dynamic_pdfx;
@@ -287,6 +287,14 @@ class PDFService {
 
     // 5. Advanced Footer (Page numbers, Branding)
     // BUT we want footers on ALL pages. Let's add a post-generation footer loop.
+    PdfBitmap? logoBitmap;
+    try {
+      final ByteData logoData = await rootBundle.load('assets/images/app_logo.png');
+      logoBitmap = PdfBitmap(logoData.buffer.asUint8List());
+    } catch (e) {
+      debugPrint("Could not load logo for PDF footer: $e");
+    }
+
     for (int i = 0; i < document.pages.count; i++) {
        final PdfPage p = document.pages[i];
        final double pW = p.getClientSize().width;
@@ -299,11 +307,17 @@ class PDFService {
        );
 
        // Branding
+       double textStartX = 0.0;
+       if (logoBitmap != null) {
+         p.graphics.drawImage(logoBitmap, Rect.fromLTWH(0, pH - 21, 10, 10));
+         textStartX = 14.0;
+       }
+
        p.graphics.drawString(
          'Docara Professional Assistant',
          PdfStandardFont(PdfFontFamily.helvetica, 8, style: PdfFontStyle.italic),
          brush: PdfBrushes.gray,
-         bounds: Rect.fromLTWH(0, pH - 20, pW, 15),
+         bounds: Rect.fromLTWH(textStartX, pH - 20, pW - textStartX, 15),
          format: PdfStringFormat(alignment: PdfTextAlignment.left),
        );
 
